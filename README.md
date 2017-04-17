@@ -1,2 +1,2 @@
-[BÕ¾µ¯Ä»¼§](https://github.com/copyliu/bililive_dm/)µÄ[¹Ø×¢ÌáĞÑ](https://www.danmuji.cn/plugins/FollowAlert)²å¼ş¡£
-Ò»¸ö·Ç³£¼òµ¥µÄĞ¡²å¼ş¡£
+[Bç«™å¼¹å¹•å§¬](https://github.com/copyliu/bililive_dm/)çš„[å…³æ³¨æé†’](https://www.danmuji.cn/plugins/FollowAlert)æ’ä»¶ã€‚  
+ä¸€ä¸ªéå¸¸ç®€å•çš„å°æ’ä»¶ã€‚
