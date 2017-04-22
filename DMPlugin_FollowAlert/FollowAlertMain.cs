@@ -48,7 +48,7 @@ namespace DMPlugin_FollowAlert
                 try
                 {
                     var plugin = this;
-                    var versionChecker = new VersionChecker("FollowAlert", "http://192.168.1.8:4000");
+                    var versionChecker = new VersionChecker("FollowAlert");
                     if(versionChecker.FetchInfo())
                     {
                         if(versionChecker.hasNewVersion(plugin.PluginVer))
