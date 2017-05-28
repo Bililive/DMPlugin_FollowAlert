@@ -12,7 +12,7 @@ namespace DMPlugin_FollowAlert
 {
     public class FollowAlertMain : DMPlugin
     {
-        private const string PluginVersion = "1.1.0";
+        private const string PluginVersion = "1.1.1";
 
         internal static readonly string configPath = Path.Combine(Environment.GetFolderPath(
             Environment.SpecialFolder.MyDocuments), "弹幕姬", "Plugins", "关注提醒");
@@ -24,7 +24,7 @@ namespace DMPlugin_FollowAlert
 
         private int errorCount = 0;
         private int masterId = 0;
-        private int lastFollowId = 0;
+        private int lastFollowId = 0;// 现在修改为 addtime ， record_id 因为未知原因全部传0了
         private List<string> unames = new List<string>();
 
         public FollowAlertMain()
@@ -143,16 +143,16 @@ namespace DMPlugin_FollowAlert
                         {// 如果返回的数据没有问题
                             if(lastFollowId == 0)
                             {// 如果这是第一次获取数据 保存最后一个关注的id
-                                lastFollowId = j["data"]["list"][0]["record_id"].ToObject<int>();
+                                lastFollowId = j["data"]["list"][0]["addtime"].ToObject<int>();
                             }
                             else// 不是第一次获取数据
                             {// 比较是否有新关注
-                                if(j["data"]["list"][0]["record_id"].ToObject<int>() > lastFollowId)
+                                if(j["data"]["list"][0]["addtime"].ToObject<int>() > lastFollowId)
                                 {// 如果有更新的关注的话
                                     foreach(JObject item in j["data"]["list"] as JArray)
                                     {// 循环列表
-                                        if(item["record_id"].ToObject<int>() > lastFollowId && !unames.Contains(item["uname"].ToString()))
-                                        {// 如果 record_id 更新，并且不是最近关注过的人
+                                        if(item["addtime"].ToObject<int>() > lastFollowId && !unames.Contains(item["uname"].ToString()))
+                                        {// 如果 addtime 更新，并且不是最近关注过的人
                                             display(item["uname"].ToString());
 
                                             // 防关注刷屏措施
@@ -162,7 +162,7 @@ namespace DMPlugin_FollowAlert
                                         }
                                     }// end of foreach
                                     // 重新设定最后一个关注id
-                                    lastFollowId = j["data"]["list"][0]["record_id"].ToObject<int>();
+                                    lastFollowId = j["data"]["list"][0]["addtime"].ToObject<int>();
                                 }// 更新的关注if结束
                             }// 是否第一次获取if结束
                         }
