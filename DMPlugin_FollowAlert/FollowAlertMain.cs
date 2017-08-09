@@ -12,7 +12,7 @@ namespace DMPlugin_FollowAlert
 {
     public class FollowAlertMain : DMPlugin
     {
-        private const string PluginVersion = "1.1.1";
+        private const string PluginVersion = "1.2.0";
 
         internal static readonly string configPath = Path.Combine(Environment.GetFolderPath(
             Environment.SpecialFolder.MyDocuments), "弹幕姬", "Plugins", "关注提醒");
