@@ -112,6 +112,9 @@ namespace DMPlugin_FollowAlert
             w.Topmost = false;
         }
 
+        private const string API_URL = "https://api.bilibili.com/x/relation/followers?vmid=";
+        private const string FAN_TIME_KEY = "mtime";
+
         private void loop()
         {
             while(true)
@@ -122,7 +125,7 @@ namespace DMPlugin_FollowAlert
                     JObject j;
                     try
                     {
-                        j = JObject.Parse(httpGet("https://space.bilibili.com/ajax/friend/GetFansList?page=1&mid=" + masterId));
+                        j = JObject.Parse(httpGet(API_URL + masterId));
                         errorCount = 0;
                     }
                     catch(Exception ex)
@@ -139,19 +142,19 @@ namespace DMPlugin_FollowAlert
                     // 网络&Json解析完毕
                     try
                     {
-                        if(j["status"].ToObject<bool>() && (j["data"]["list"] as JArray).Count > 0)
+                        if(j["code"].ToObject<int>() == 0 && (j["data"]["list"] as JArray).Count > 0)
                         {// 如果返回的数据没有问题
                             if(lastFollowId == 0)
                             {// 如果这是第一次获取数据 保存最后一个关注的id
-                                lastFollowId = j["data"]["list"][0]["addtime"].ToObject<int>();
+                                lastFollowId = j["data"]["list"][0][FAN_TIME_KEY].ToObject<int>();
                             }
                             else// 不是第一次获取数据
                             {// 比较是否有新关注
-                                if(j["data"]["list"][0]["addtime"].ToObject<int>() > lastFollowId)
+                                if(j["data"]["list"][0][FAN_TIME_KEY].ToObject<int>() > lastFollowId)
                                 {// 如果有更新的关注的话
                                     foreach(JObject item in j["data"]["list"] as JArray)
                                     {// 循环列表
-                                        if(item["addtime"].ToObject<int>() > lastFollowId && !unames.Contains(item["uname"].ToString()))
+                                        if(item[FAN_TIME_KEY].ToObject<int>() > lastFollowId && !unames.Contains(item["uname"].ToString()))
                                         {// 如果 addtime 更新，并且不是最近关注过的人
                                             display(item["uname"].ToString());
 
@@ -162,7 +165,7 @@ namespace DMPlugin_FollowAlert
                                         }
                                     }// end of foreach
                                     // 重新设定最后一个关注id
-                                    lastFollowId = j["data"]["list"][0]["addtime"].ToObject<int>();
+                                    lastFollowId = j["data"]["list"][0][FAN_TIME_KEY].ToObject<int>();
                                 }// 更新的关注if结束
                             }// 是否第一次获取if结束
                         }
