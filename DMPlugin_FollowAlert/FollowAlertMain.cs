@@ -1,29 +1,29 @@
 ﻿using BilibiliDM_PluginFramework;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
+using System.Deployment.Application;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
-using System.Deployment.Application;
-using System.Collections.Generic;
 
 namespace DMPlugin_FollowAlert
 {
     public class FollowAlertMain : DMPlugin
     {
-        private const string PluginVersion = "1.2.0";
+        private const string PluginVersion = "1.2.1";
 
         internal static readonly string configPath = Path.Combine(Environment.GetFolderPath(
             Environment.SpecialFolder.MyDocuments), "弹幕姬", "Plugins", "关注提醒");
         internal static readonly string outputPath = Path.Combine(configPath, "输出.txt");
-        internal static readonly string tplPath = Path.Combine(configPath,"模板.cfg"); //cfg后缀用于防止用户直接编辑内容或添加错文件
+        internal static readonly string tplPath = Path.Combine(configPath, "模板.cfg"); //cfg后缀用于防止用户直接编辑内容或添加错文件
 
         private FollowAlertWindow w;
         private Thread t;
 
         private int errorCount = 0;
-        private int masterId = 0;
+        private ulong masterId = 0;
         private int lastFollowId = 0;// 现在修改为 addtime ， record_id 因为未知原因全部传0了
         private List<string> unames = new List<string>();
 
@@ -33,7 +33,7 @@ namespace DMPlugin_FollowAlert
             this.PluginAuth = "宅急送队长";
             this.PluginDesc = "有新观众关注时发出提醒";
             this.PluginVer = PluginVersion;
-            this.PluginCont = "https://f.danmuji.cn";
+            this.PluginCont = "genteure+dmpfollowalert@gmail.com";
 
             w = new FollowAlertWindow(this);
 
@@ -49,9 +49,9 @@ namespace DMPlugin_FollowAlert
                 {
                     var plugin = this;
                     var versionChecker = new VersionChecker("FollowAlert");
-                    if(versionChecker.FetchInfo())
+                    if (versionChecker.FetchInfo())
                     {
-                        if(versionChecker.hasNewVersion(plugin.PluginVer))
+                        if (versionChecker.hasNewVersion(plugin.PluginVer))
                         {
                             string info = "插件有新版本了！最新版本:" + versionChecker.Version + "  当前版本:" + plugin.PluginVer;
                             info += "  更新时间:" + versionChecker.UpdateDateTime.ToString("yyyy.MM.dd HH:mm");
@@ -66,7 +66,7 @@ namespace DMPlugin_FollowAlert
                     }
 
                 }
-                catch(Exception)
+                catch (Exception)
                 { }
             })
             { Name = "FollowAlertVersionChecker", IsBackground = true }.Start();
@@ -76,13 +76,13 @@ namespace DMPlugin_FollowAlert
         {
             try
             {
-                var json = httpGet("https://api.live.bilibili.com/live/getInfo?roomid=" + e.roomid);
+                var json = httpGet("https://api.live.bilibili.com/room/v1/Room/room_init?id=" + e.roomid);
                 JObject j = JObject.Parse(json);
-                masterId = j["data"]["MASTERID"].ToObject<int>();
+                masterId = j["data"]["uid"].ToObject<ulong>();
                 lastFollowId = 0;
                 unames.Clear();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 masterId = 0;
                 AddDM("获取主播信息错误，请查看日志");
@@ -117,10 +117,10 @@ namespace DMPlugin_FollowAlert
 
         private void loop()
         {
-            while(true)
+            while (true)
             {
                 Thread.Sleep(1000);// 延迟一秒
-                if(Status && masterId != 0)
+                if (Status && masterId != 0)
                 {
                     JObject j;
                     try
@@ -128,10 +128,10 @@ namespace DMPlugin_FollowAlert
                         j = JObject.Parse(httpGet(API_URL + masterId));
                         errorCount = 0;
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {// 出现了什么错误
                         errorCount++;
-                        if(errorCount >= 3)
+                        if (errorCount >= 3)
                         {
                             base.Stop();
                             AddDM("插件错误，请查看日志");
@@ -142,25 +142,25 @@ namespace DMPlugin_FollowAlert
                     // 网络&Json解析完毕
                     try
                     {
-                        if(j["code"].ToObject<int>() == 0 && (j["data"]["list"] as JArray).Count > 0)
+                        if (j["code"].ToObject<int>() == 0 && (j["data"]["list"] as JArray).Count > 0)
                         {// 如果返回的数据没有问题
-                            if(lastFollowId == 0)
+                            if (lastFollowId == 0)
                             {// 如果这是第一次获取数据 保存最后一个关注的id
                                 lastFollowId = j["data"]["list"][0][FAN_TIME_KEY].ToObject<int>();
                             }
                             else// 不是第一次获取数据
                             {// 比较是否有新关注
-                                if(j["data"]["list"][0][FAN_TIME_KEY].ToObject<int>() > lastFollowId)
+                                if (j["data"]["list"][0][FAN_TIME_KEY].ToObject<int>() > lastFollowId)
                                 {// 如果有更新的关注的话
-                                    foreach(JObject item in j["data"]["list"] as JArray)
+                                    foreach (JObject item in j["data"]["list"] as JArray)
                                     {// 循环列表
-                                        if(item[FAN_TIME_KEY].ToObject<int>() > lastFollowId && !unames.Contains(item["uname"].ToString()))
+                                        if (item[FAN_TIME_KEY].ToObject<int>() > lastFollowId && !unames.Contains(item["uname"].ToString()))
                                         {// 如果 addtime 更新，并且不是最近关注过的人
                                             display(item["uname"].ToString());
 
                                             // 防关注刷屏措施
                                             unames.Add(item["uname"].ToString());
-                                            if(unames.Count > 9)
+                                            if (unames.Count > 9)
                                             { unames.RemoveAt(0); }
                                         }
                                     }// end of foreach
@@ -170,7 +170,7 @@ namespace DMPlugin_FollowAlert
                             }// 是否第一次获取if结束
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {// 处理数据时错误，怀疑B站修改了返回数据格式
                         base.Stop();
                         AddDM("数据处理错误，请查看日志");
@@ -203,7 +203,7 @@ namespace DMPlugin_FollowAlert
         private static string getUserAgent()
         {
             string MainVersion;
-            if(ApplicationDeployment.IsNetworkDeployed)
+            if (ApplicationDeployment.IsNetworkDeployed)
             { MainVersion = ApplicationDeployment.CurrentDeployment.CurrentVersion.ToString(); }
             else
             { MainVersion = "DebugMode"; }
@@ -223,7 +223,7 @@ namespace DMPlugin_FollowAlert
                     dynamic mw = System.Windows.Application.Current.MainWindow;
                     mw.AddDMText(name, text, red, fullscreen);
                 }
-                catch(Exception)
+                catch (Exception)
                 {
                     this.AddDM(name + " " + text, fullscreen);
                 }
